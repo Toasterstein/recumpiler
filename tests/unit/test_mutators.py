@@ -6,7 +6,8 @@
 
 import pytest
 
-from recumpiler.mutators import recumpile_text
+from recumpiler.__main__ import seed_random
+from recumpiler.mutators import recumpile_text, owoer
 
 
 @pytest.mark.timeout(120)
@@ -50,3 +51,21 @@ def test_mutate_text_blob_preserve_newlines(text):
     assert isinstance(out_str, str)
     assert "\n" in out_str
     print(out_str)
+
+
+@pytest.mark.parametrize(
+    "token, expected",
+    [
+        ("o", "o"),
+        ("ow", "owo"),
+        ("owo", "owo"),
+        ("owd", "owod"),
+        ("owfuckme", "owofuckme"),
+        ("fuckyouow", "fuckyouowo"),
+        ("fuckyouowfuckme", "fuckyouowofuckme"),
+        ("", ""),
+    ],
+)
+def test_owoer(token, expected):
+    seed_random("2321")
+    assert owoer(token) == expected

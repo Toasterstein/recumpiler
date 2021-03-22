@@ -126,7 +126,9 @@ setup(
         "inflect>=4.0.0,<5.0.0",
         "compound-word-splitter>=0.4,<1.0",
     ],
-    setup_requires=["nltk>=3.4.5,<4.0.0",],
+    setup_requires=[
+        "nltk>=3.4.5,<4.0.0",
+    ],
     tests_require=[
         "pytest>=5.3.2,<6.0.0",
         "pytest-cov>=2.8.1,<3.0.0",
