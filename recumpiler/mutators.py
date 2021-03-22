@@ -227,19 +227,19 @@ def owoer(token: str) -> str:
     # TODO: owo usually goes to owoo should supress.
 
     token = re.sub(
-        r"(ou)([^o])?",
+        r"(ou)([^o]|$)",
         lambda match: f"ouo{match.group(2) or ''}",
         token,
         flags=re.IGNORECASE,
     )
     token = re.sub(
-        r"(ow)([^o])?",
+        r"(ow)([^o]|$)",
         lambda match: f"owo{match.group(2) or ''}",
         token,
         flags=re.IGNORECASE,
     )
     token = re.sub(
-        r"(ov)([^o])?",
+        r"(ov)([^o]|$)",
         lambda match: f"ovo{match.group(2) or ''}",
         token,
         flags=re.IGNORECASE,
