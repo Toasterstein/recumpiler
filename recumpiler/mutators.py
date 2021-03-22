@@ -846,12 +846,10 @@ def recumpile_token(token: str) -> str:
         #   >>>list(TextBlob("fu@k").words)
         #   ['fu', 'k']
         if add_random_plurals and decision(add_random_plurals_probability):
-            for word in TextBlob(fucked_token).words:
-                fucked_token = Word(word).pluralize()
+            fucked_token = Word(fucked_token).pluralize()
 
         if randomly_lemmatize and decision(randomly_lemmatize_probability):
-            for word in TextBlob(fucked_token).words:
-                fucked_token = Word(word).lemmatize()
+            fucked_token = Word(fucked_token).lemmatize()
 
         if randomly_capitalize_word and decision(randomly_capitalize_word_probability):
             fucked_token = fucked_token.upper()
