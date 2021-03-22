@@ -14,7 +14,6 @@ from timeit import default_timer as timer
 
 import homoglyphs as hg
 import inflect
-import lorem
 import nltk
 import numpy as np
 import pronouncing
@@ -131,16 +130,12 @@ random_synonym_probability = 0.5
 random_ending_y_probability = 0.05
 leet_speak_min_token_length = 5
 
-add_definition_in_parenthesis_probability = 0.005
 adding_ending_ksksk_andioop_probability = 0.8
 adding_ending_ksksk_save_the_turtles_probability = 0.3
 
 ksksk_enlargement_probability = 0.7
 
 owo_vs_ouo_bias = 0.5
-
-random_lorem_ipsum_probability = 0.015
-lorem_ipsum_fuck_probability = 0.5
 
 add_extra_ed_probability = 0.05
 split_compound_word_probability = 0.03
@@ -750,13 +745,6 @@ def utf_8_char_swaps(token: str) -> str:
 
 
 @logged_mutator
-def get_token_random_definition(token: str) -> Optional[str]:
-    synsets = wn.synsets(token)
-    if synsets:
-        return random.choice(synsets).definition()
-
-
-@logged_mutator
 def recumpile_sentence(sentance: Sentence) -> List[str]:
     new_tokens = []
     # TODO: determine mood classifier for sentence and add respective emoji
@@ -782,14 +770,6 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
         # post processing
         new_tokens.append(recumpiled_token)
 
-        if decision(add_definition_in_parenthesis_probability):
-            definition = get_token_random_definition(token)
-            if definition:
-                new_tokens += [
-                    f"[[{recumpile_token('DEFINITION')} {token.upper()}:",
-                    f"{recumpile_text(definition)}]]",
-                ]
-
         if add_husky:
             new_tokens.append(recumpile_token("husky"))
 
@@ -814,27 +794,12 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
     if add_random_rp_action and decision(add_random_rp_end_sentence_action_probability):
         new_tokens.append(get_random_rp_action_sentence())
 
-    if decision(random_lorem_ipsum_probability):
-        new_tokens.append(get_random_lorem_ipsum_sentance())
     return new_tokens
 
 
 @logged_mutator
 def add_ending_y(token: str) -> str:
     return re.sub(r"([a-zA-Z]{4,}[^sy])", lambda match: f"{match.group(1)}y", token)
-
-
-@logged_mutator
-def get_random_lorem_ipsum_sentance() -> str:
-    """get lorem ipsum sentence"""
-    lorem_sentence = lorem.sentence()
-    if decision(lorem_ipsum_fuck_probability):
-        lorem_sentence = fix_punctuation_spacing(
-            TreebankWordDetokenizer().detokenize(
-                recumpile_sentence(Sentence(lorem_sentence))
-            )
-        )
-    return lorem_sentence
 
 
 @logged_mutator
