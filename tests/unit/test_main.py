@@ -30,7 +30,14 @@ def test_get_parser():
         "apple " * 20,
     ],
 )
-@pytest.mark.parametrize("seed", ["", "foo bar", "my really long seed" * 1000,])
+@pytest.mark.parametrize(
+    "seed",
+    [
+        "",
+        "foo bar",
+        "my really long seed" * 1000,
+    ],
+)
 def test_random_seeding(text, seed, capsys):
     first_invoke_output = None
     for i in range(10):
