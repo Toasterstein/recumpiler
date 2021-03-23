@@ -1114,7 +1114,21 @@ def custom_censoring(swear_word: str, censor_percent: float = 0.25) -> str:
         return swear_word
     censor_word_list = list("@#$%*")
     swaps = int(ceil(len(swear_word) * censor_percent))
-    indexes = random.choices(range(1, len(swear_word)), k=swaps)
+    indexes = list(range(0, len(swear_word)))
+    random.shuffle(indexes)
+    indexes = indexes[:swaps]
+
+    # avoid censoring the start or end of a string if we are not completely censoring the string
+    if not (len(indexes) == len(swear_word)):
+        try:
+            indexes.remove(0)
+        except ValueError:
+            pass
+        try:
+            indexes.remove(len(swear_word) - 1)
+        except ValueError:
+            pass
+
     for i in indexes:
         swear_word = "".join(
             [
