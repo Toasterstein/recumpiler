@@ -755,7 +755,10 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
         if decision(censor_profanity_probability) and profanity.contains_profanity(
             token
         ):
-            token = custom_censoring(token, censor_profanity_percent)
+            if decision(0.1):
+                token = custom_censoring(token, 1)
+            else:
+                token = custom_censoring(token, censor_profanity_percent)
         elif decision(random_censor_probability):
             token = custom_censoring(token, random_censor_percent)
 
