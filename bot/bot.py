@@ -34,7 +34,6 @@ class RecumpilerBot(discord.Client):
         )
         if message.author.id != self.user.id:
             if message.channel.id in channels:
-
                 fucked_text = recumpile_text(message.content)
                 __log__.info(f"fucked message text: {fucked_text}")
                 await message.delete()
