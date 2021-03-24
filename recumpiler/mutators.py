@@ -25,6 +25,7 @@ from word2number import w2n
 
 # TODO: issues with pyenchant
 # import splitter
+from recumpiler.emojijnet import get_word_emoji
 from recumpiler.utils import (
     load_simple_text_emojis,
     load_action_verbs,
@@ -750,6 +751,13 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
     # TODO: determine mood classifier for sentence and add respective emoji
 
     for token in sentance.tokens:
+        emoji = None
+        if decision(0.8):
+            emoji = get_word_emoji(token)
+            if emoji:
+                if decision(0.5):
+                    new_tokens.append(emoji)
+
         if decision(random_synonym_probability):
             token = replace_with_random_synonym(token)
         if decision(censor_profanity_probability) and profanity.contains_profanity(
@@ -772,6 +780,10 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
 
         # post processing
         new_tokens.append(recumpiled_token)
+
+        if emoji:
+            if decision(0.8):
+                new_tokens.append(emoji)
 
         if add_husky:
             new_tokens.append(recumpile_token("husky"))
