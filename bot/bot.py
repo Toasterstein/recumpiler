@@ -34,12 +34,13 @@ class RecumpilerBot(discord.Client):
         )
         if message.author.id != self.user.id:
             if message.channel.id in channels:
+                await message.delete()
+                # TODO: add some way to recover if `recumpile_text` fails?
                 fucked_text = recumpile_text(message.content)
                 # TODO: It is not impossible that recumpile_text generates text longer than 2000 characters!
                 #       maybe recumpile_text should have options to limit its generated output length to avoid
                 #       either dropping the message or embedding it as a file.
                 __log__.info(f"fucked message text: {fucked_text}")
-                await message.delete()
                 await message.channel.send(
                     content=f"<@!{message.author.id}> {fucked_text}"
                 )
