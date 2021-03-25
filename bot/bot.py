@@ -19,6 +19,11 @@ basicConfig(level=logging.INFO)
 __log__ = getLogger()
 
 
+import sys
+
+sys.setrecursionlimit(5500)
+
+
 class RecumpilerBot(discord.Client):
     def __init__(self, *, loop=None, **options):
         discord.Client.__init__(self, loop=loop, options=options)
