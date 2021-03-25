@@ -143,19 +143,20 @@ def word_emoji_inserter(word: Word):
 print(word_emoji_inserter("car"))
 
 
-def get_word_emoji(word: Word):
-    verb_lemmatized_word = Word(word).singularize().lemmatize().lower()
-    word_emoji = noun_occurrence_query(
-        verb_lemmatized_word, min_dist=emoji_glove_lookup_accuracy.high.value
-    )
-    if word_emoji:
-        return word_emoji[0]
-    else:
-        return None
+def get_gloveword_emoji(word: Word):
+    verb_lemmatized_word = Word(word)
+    # maybe just check if word is noun and if so go from there
+    tags = TextBlob(str(verb_lemmatized_word)).tags
+    if tags:
+        word, tag = tags[0]
+        if str(tag).startswith("V") or str(tag).startswith("NN"):
 
-
-print(get_word_emoji("car"))
-print(get_word_emoji("crab"))
-print(get_word_emoji("gun"))
-print(get_word_emoji("ship"))
-print(get_word_emoji("train"))
+            word_emoji = noun_occurrence_query(
+                verb_lemmatized_word, min_dist=emoji_glove_lookup_accuracy.high.value
+            )
+            if word_emoji:
+                return word_emoji[0]
+            else:
+                return None
+        else:
+            return None

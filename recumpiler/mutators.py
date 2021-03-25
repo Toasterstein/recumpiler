@@ -25,7 +25,9 @@ from word2number import w2n
 
 # TODO: issues with pyenchant
 # import splitter
-from recumpiler.emojijnet import get_word_emoji
+from recumpiler.emojijnet import get_gloveword_emoji
+from recumpiler.mutators_deepmoji import get_sentiment_emoji
+from recumpiler.mutators_emoji_data import get_emoji_from_data
 from recumpiler.utils import (
     load_simple_text_emojis,
     load_action_verbs,
@@ -48,16 +50,17 @@ def logged_mutator(f):
         start = timer()
         output = f(*args, **kwds)
         end = timer()
-        __log__.info(
-            {
-                "message": "called mutator",
-                "mutator": f.__name__,
-                "args": args,
-                "kwargs": kwds,
-                "output": output,
-                "exc_time": "{0:.15f}".format(end - start),
-            }
-        )
+        # TODO: issue hitting recursion limit
+        # __log__.info(
+        #     {
+        #         "message": "called mutator",
+        #         "mutator": f.__name__,
+        #         "args": args,
+        #         "kwargs": kwds,
+        #         "output": output,
+        #         "exc_time": "{0:.15f}".format(end - start),
+        #     }
+        # )
         return output
 
     return wrapper
@@ -749,14 +752,19 @@ def utf_8_char_swaps(token: str) -> str:
 def recumpile_sentence(sentance: Sentence) -> List[str]:
     new_tokens = []
     # TODO: determine mood classifier for sentence and add respective emoji
+    sentiment_emoji = None
+    if decision(0.89):
+        sentiment_emoji = get_sentiment_emoji(sentance)
 
     for token in sentance.tokens:
         emoji = None
-        if decision(0.8):
-            emoji = get_word_emoji(token)
-            if emoji:
-                if decision(0.5):
-                    new_tokens.append(emoji)
+        if decision(0.5):
+            emoji = get_emoji_from_data(token)
+        if decision(0.3):
+            emoji = get_gloveword_emoji(token)
+        if emoji:
+            if decision(0.5):
+                new_tokens.append(emoji)
 
         if decision(random_synonym_probability):
             token = replace_with_random_synonym(token)
@@ -809,6 +817,8 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
     if add_random_rp_action and decision(add_random_rp_end_sentence_action_probability):
         new_tokens.append(get_random_rp_action_sentence())
 
+    if sentiment_emoji:
+        new_tokens.append(sentiment_emoji)
     return new_tokens
 
 
