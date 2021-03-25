@@ -125,6 +125,7 @@ setup(
         "homoglyphs>=1.3.5,<2.0.0",
         "inflect>=4.0.0,<5.0.0",
         "compound-word-splitter>=0.4,<1.0",
+        "emoji>=0.6.0,<1.0.0",
     ],
     setup_requires=[
         "nltk>=3.4.5,<4.0.0",
