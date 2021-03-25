@@ -106,6 +106,7 @@ from textblob import TextBlob, Word
 
 
 def noun_occurrence_query(noun: str, most_n: int = 5, min_dist: float = None):
+    print(f"emojinet prompt:{noun}")
     tokens = TextBlob(noun).tokens
     noun_vector = sum([nlp(str(token)).vector for token in tokens])
     return occurrence_query(noun_vector, most_n, min_dist=min_dist)
