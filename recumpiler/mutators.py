@@ -25,6 +25,7 @@ from word2number import w2n
 
 # TODO: issues with pyenchant
 # import splitter
+from recumpiler.cheap_emoji_alias import get_cheap_emoji_alias
 from recumpiler.emojijnet import get_gloveword_emoji
 from recumpiler.mutators_deepmoji import get_sentiment_emoji
 from recumpiler.mutators_emoji_data import get_emoji_from_data
@@ -758,6 +759,15 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
 
     for token in sentance.tokens:
         emoji = None
+        alias_emoji = get_cheap_emoji_alias(token)
+        if alias_emoji:
+            if decision(0.1):
+                new_tokens.append(alias_emoji)
+                continue
+            else:
+                if decision(0.5):
+                    new_tokens.append(alias_emoji)
+
         if decision(0.5):
             emoji = get_emoji_from_data(token)
         if decision(0.3):
@@ -792,6 +802,9 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
         if emoji:
             if decision(0.8):
                 new_tokens.append(emoji)
+        if alias_emoji:
+            if decision(0.8):
+                new_tokens.append(alias_emoji)
 
         if add_husky:
             new_tokens.append(recumpile_token("husky"))
