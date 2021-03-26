@@ -26,8 +26,20 @@ from word2number import w2n
 # TODO: issues with pyenchant
 # import splitter
 from recumpiler.cheap_emoji_alias import get_cheap_emoji_alias
-from recumpiler.emojijnet import get_gloveword_emoji
-from recumpiler.mutators_deepmoji import get_sentiment_emoji
+
+# these are imported like this as the dependencies are complicated to install
+# and require large files. These are annoying to test in a CI for now.
+# TODO: avoid this work around in future make better CI solution
+try:
+    from recumpiler.emojijnet import get_gloveword_emoji
+except:
+    get_gloveword_emoji = lambda: None
+try:
+    from recumpiler.mutators_deepmoji import get_sentiment_emoji
+except:
+    get_sentiment_emoji = lambda: None
+
+
 from recumpiler.mutators_emoji_data import get_emoji_from_data
 from recumpiler.mutators_emotlib import get_emoticon
 from recumpiler.utils import (
