@@ -29,6 +29,7 @@ from recumpiler.cheap_emoji_alias import get_cheap_emoji_alias
 from recumpiler.emojijnet import get_gloveword_emoji
 from recumpiler.mutators_deepmoji import get_sentiment_emoji
 from recumpiler.mutators_emoji_data import get_emoji_from_data
+from recumpiler.mutators_emotlib import get_emoticon
 from recumpiler.utils import (
     load_simple_text_emojis,
     load_action_verbs,
@@ -760,6 +761,9 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
     for token in sentance.tokens:
         emoji = None
         alias_emoji = get_cheap_emoji_alias(token)
+
+        emoticon = get_emoticon(token)
+
         if alias_emoji:
             if decision(0.1):
                 new_tokens.append(alias_emoji)
@@ -805,6 +809,9 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
         if alias_emoji:
             if decision(0.8):
                 new_tokens.append(alias_emoji)
+        if emoticon:
+            if decision(0.8):
+                new_tokens.append(emoticon)
 
         if add_husky:
             new_tokens.append(recumpile_token("husky"))

@@ -126,6 +126,7 @@ setup(
         "inflect>=4.0.0,<5.0.0",
         "compound-word-splitter>=0.4,<1.0",
         "emoji>=0.6.0,<1.0.0",
+        "emotlib>=1.0.1,<2.0.0",
     ],
     setup_requires=[
         "nltk>=3.4.5,<4.0.0",
