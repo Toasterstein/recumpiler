@@ -1,4 +1,7 @@
-import json
+# pylint: disable=import-error
+
+# TODO: pylint disables are a byproduct of us unable to install
+#       deepmoji in CI
 import random
 from typing import List
 
@@ -15,6 +18,7 @@ import tensorflow as tf
 
 # gpu compatibility for TF 2.0 with legacy keras
 config = tf.compat.v1.ConfigProto()
+# pylint: disable=no-member
 config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU
 config.log_device_placement = (
     True  # to log device placement (on which device the operation ran)
