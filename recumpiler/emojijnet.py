@@ -147,15 +147,20 @@ print(word_emoji_inserter("car"))
 def get_gloveword_emoji(word: Word):
     verb_lemmatized_word = Word(word)
     # maybe just check if word is noun and if so go from there
-    tags = TextBlob(str(verb_lemmatized_word)).tags
-    if tags:
-        word, tag = tags[0]
+    # tags = TextBlob(str(verb_lemmatized_word)).tags
+    # TODO: textblob seems to be better at tagging if given the full real sentence
+    word_nlp = nlp(str(word))
+    if word_nlp:
+        tag = word_nlp[0].tag_
         if str(tag).startswith("V") or str(tag).startswith("NN"):
-
             word_emoji = noun_occurrence_query(
                 verb_lemmatized_word, min_dist=emoji_glove_lookup_accuracy.high.value
             )
             if word_emoji:
+                if (
+                    str(word_emoji[0]) == "ℹ"
+                ):  # TODO: this emoji is miss-classified alot so we ignore it
+                    return None
                 return word_emoji[0]
             else:
                 return None
