@@ -801,6 +801,8 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
 
         if decision(random_synonym_probability):
             token = replace_with_random_synonym(token)
+        if decision(0.5) and profanity.contains_profanity(token):
+            token = token.upper()
         if decision(censor_profanity_probability) and profanity.contains_profanity(
             token
         ):
