@@ -868,6 +868,13 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
 
     if sentiment_emoji:
         new_tokens.append(sentiment_emoji)
+        if decision(0.4):
+            for i in range(5):
+                if decision(0.3):
+                    new_tokens.append(sentiment_emoji)
+                else:
+                    break
+
     return new_tokens
 
 
