@@ -150,9 +150,9 @@ class deepmoji_lookup_accuracy(enum.Enum):
     high = 0.07
 
 
-def get_sentiment_emoji(sentance):
+def get_sentiment_emoji(sentence):
     emojis = sentiment_query(
-        str(sentance), most_n=3, min_dist=deepmoji_lookup_accuracy.high.value
+        str(sentence), most_n=3, min_dist=deepmoji_lookup_accuracy.high.value
     )
     if emojis:
         # TODO: maybe smarter grab
