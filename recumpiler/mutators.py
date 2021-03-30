@@ -784,7 +784,7 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
         emoticon = get_emoticon(token)
 
         if alias_emoji:
-            if decision(0.1):
+            if decision(0.1) or (len(str(token)) == 1 and decision(0.9)):
                 new_tokens.append(alias_emoji)
                 continue
             else:
