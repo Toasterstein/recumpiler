@@ -781,6 +781,14 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
         emoji = None
         alias_emoji = get_cheap_emoji_alias(token)
 
+        # TODO: refactor into its own mutator
+        if decision(0.9) and (
+            re.match("among", token, flags=re.IGNORECASE)
+            or re.match("amogus", token, flags=re.IGNORECASE)
+            or re.match(r"su+s", token, flags=re.IGNORECASE)
+        ):
+            emoji = "ඞ"
+
         emoticon = get_emoticon(token)
 
         if alias_emoji:
