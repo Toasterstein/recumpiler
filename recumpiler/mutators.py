@@ -476,7 +476,14 @@ def rawrer(token: str) -> str:
 @logged_mutator
 def lr_to_w_swap(token: str) -> str:
     token = re.sub(
-        r"([lrLR])", lambda match: f"{'w' if match.group(1).islower() else 'W'}", token
+        r"([lL])",
+        lambda match: f"{('w' if decision(0.7) else 'wl') if match.group(1).islower() else ('W' if decision(0.7) else 'WL')}",
+        token,
+    )
+    token = re.sub(
+        r"([rR])",
+        lambda match: f"{('w' if decision(0.7) else 'wr') if match.group(1).islower() else ('W' if decision(0.7) else 'WR')}",
+        token,
     )
     return token
 
