@@ -770,14 +770,14 @@ def utf_8_char_swaps(token: str) -> str:
 
 
 @logged_mutator
-def recumpile_sentence(sentance: Sentence) -> List[str]:
+def recumpile_sentence(sentence: Sentence) -> List[str]:
     new_tokens = []
     # TODO: determine mood classifier for sentence and add respective emoji
     sentiment_emoji = None
     if decision(0.89):
-        sentiment_emoji = get_sentiment_emoji(sentance)
+        sentiment_emoji = get_sentiment_emoji(sentence)
 
-    for token in sentance.tokens:
+    for token in sentence.tokens:
         emoji = None
         alias_emoji = get_cheap_emoji_alias(token)
 
