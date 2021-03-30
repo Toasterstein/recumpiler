@@ -25,6 +25,23 @@ from word2number import w2n
 
 # TODO: issues with pyenchant
 # import splitter
+from recumpiler.cheap_emoji_alias import get_cheap_emoji_alias
+
+# these are imported like this as the dependencies are complicated to install
+# and require large files. These are annoying to test in a CI for now.
+# TODO: avoid this work around in future make better CI solution
+try:
+    from recumpiler.emojijnet import get_gloveword_emoji
+except:
+    get_gloveword_emoji = lambda word: None
+try:
+    from recumpiler.mutators_deepmoji import get_sentiment_emoji
+except:
+    get_sentiment_emoji = lambda sentence: None
+
+
+from recumpiler.mutators_emoji_data import get_emoji_from_data
+from recumpiler.mutators_emotlib import get_emoticon
 from recumpiler.utils import (
     load_simple_text_emojis,
     load_action_verbs,
@@ -47,16 +64,17 @@ def logged_mutator(f):
         start = timer()
         output = f(*args, **kwds)
         end = timer()
-        __log__.info(
-            {
-                "message": "called mutator",
-                "mutator": f.__name__,
-                "args": args,
-                "kwargs": kwds,
-                "output": output,
-                "exc_time": "{0:.15f}".format(end - start),
-            }
-        )
+        # TODO: issue hitting recursion limit
+        # __log__.info(
+        #     {
+        #         "message": "called mutator",
+        #         "mutator": f.__name__,
+        #         "args": args,
+        #         "kwargs": kwds,
+        #         "output": output,
+        #         "exc_time": "{0:.15f}".format(end - start),
+        #     }
+        # )
         return output
 
     return wrapper
@@ -748,8 +766,32 @@ def utf_8_char_swaps(token: str) -> str:
 def recumpile_sentence(sentance: Sentence) -> List[str]:
     new_tokens = []
     # TODO: determine mood classifier for sentence and add respective emoji
+    sentiment_emoji = None
+    if decision(0.89):
+        sentiment_emoji = get_sentiment_emoji(sentance)
 
     for token in sentance.tokens:
+        emoji = None
+        alias_emoji = get_cheap_emoji_alias(token)
+
+        emoticon = get_emoticon(token)
+
+        if alias_emoji:
+            if decision(0.1):
+                new_tokens.append(alias_emoji)
+                continue
+            else:
+                if decision(0.5):
+                    new_tokens.append(alias_emoji)
+
+        if decision(0.5):
+            emoji = get_emoji_from_data(token)
+        if decision(0.3):
+            emoji = get_gloveword_emoji(token)
+        if emoji:
+            if decision(0.5):
+                new_tokens.append(emoji)
+
         if decision(random_synonym_probability):
             token = replace_with_random_synonym(token)
         if decision(censor_profanity_probability) and profanity.contains_profanity(
@@ -772,6 +814,16 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
 
         # post processing
         new_tokens.append(recumpiled_token)
+
+        if emoji:
+            if decision(0.8):
+                new_tokens.append(emoji)
+        if alias_emoji:
+            if decision(0.8):
+                new_tokens.append(alias_emoji)
+        if emoticon:
+            if decision(0.8):
+                new_tokens.append(emoticon)
 
         if add_husky:
             new_tokens.append(recumpile_token("husky"))
@@ -797,6 +849,8 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
     if add_random_rp_action and decision(add_random_rp_end_sentence_action_probability):
         new_tokens.append(get_random_rp_action_sentence())
 
+    if sentiment_emoji:
+        new_tokens.append(sentiment_emoji)
     return new_tokens
 
 
