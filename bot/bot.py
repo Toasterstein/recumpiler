@@ -41,19 +41,31 @@ class RecumpilerBot(discord.Client):
             if message.channel.id in channels:
                 await message.delete()
                 # TODO: add some way to recover if `recumpile_text` fails?
-                fucked_text = recumpile_text(message.content)
-                fucked_text = (
-                    fucked_text.encode("utf-8")[
-                        : 2000 - (3 + len(message.author.display_name))
-                    ]
-                ).decode("utf-8")
-                # TODO: It is not impossible that recumpile_text generates text longer than 2000 characters!
-                #       maybe recumpile_text should have options to limit its generated output length to avoid
-                #       either dropping the message or embedding it as a file.
-                __log__.info(f"fucked message text: {fucked_text}")
-                await message.channel.send(
-                    content=f"<@!{message.author.id}> {fucked_text}"
-                )
+                try:
+                    original_fucked_text = recumpile_text(message.content)
+                    fucked_text = (
+                        original_fucked_text.encode("utf-8")[
+                            : 2000 - (3 + len(message.author.display_name))
+                        ]
+                    ).decode("utf-8")
+                    # TODO: It is not impossible that recumpile_text generates text longer than 2000 characters!
+                    #       maybe recumpile_text should have options to limit its generated output length to avoid
+                    #       either dropping the message or embedding it as a file.
+                    __log__.info(f"fucked message text: {fucked_text}")
+                    await message.channel.send(
+                        content=f"<@!{message.author.id}> {fucked_text}"
+                    )
+                    if original_fucked_text != fucked_text:
+                        raise ValueError(
+                            "post-processed discord-ready fucked text not the same likely output was too long"
+                        )
+                except:
+                    fucked_text = recumpile_text(
+                        "Oops i had a fucky wucky recumpiling your text! Your text could be too big UWU!"
+                    )
+                    await message.channel.send(
+                        content=f"<@!{message.author.id}> {fucked_text}"
+                    )
 
 
 client = RecumpilerBot()
