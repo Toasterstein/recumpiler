@@ -19,8 +19,20 @@ import numpy as np
 import pronouncing
 from better_profanity import profanity
 from nltk.corpus import wordnet as wn
+from nltk.tokenize.casual import (
+    HANG_RE,
+    reduce_lengthening,
+    remove_handles,
+    _replace_html_entities,
+    WORD_RE,
+    EMOTICON_RE,
+    REGEXPS,
+)
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+from regex import regex
 from textblob import TextBlob, Word, Sentence
+from textblob.base import BaseTokenizer
+from textblob.utils import strip_punc
 from word2number import w2n
 
 # TODO: issues with pyenchant
@@ -769,6 +781,109 @@ def utf_8_char_swaps(token: str) -> str:
     return token
 
 
+# TODO: this is only for discord so we don't break tokenization
+class TweetTokenizer:
+    r"""
+    Tokenizer for tweets.
+
+        >>> from nltk.tokenize import TweetTokenizer
+        >>> tknzr = TweetTokenizer()
+        >>> s0 = "This is a cooool #dummysmiley: :-) :-P <3 and some arrows < > -> <--"
+        >>> tknzr.tokenize(s0)
+        ['This', 'is', 'a', 'cooool', '#dummysmiley', ':', ':-)', ':-P', '<3', 'and', 'some', 'arrows', '<', '>', '->', '<--']
+
+    Examples using `strip_handles` and `reduce_len parameters`:
+
+        >>> tknzr = TweetTokenizer(strip_handles=True, reduce_len=True)
+        >>> s1 = '@remy: This is waaaaayyyy too much for you!!!!!!'
+        >>> tknzr.tokenize(s1)
+        [':', 'This', 'is', 'waaayyy', 'too', 'much', 'for', 'you', '!', '!', '!']
+    """
+
+    def __init__(self, preserve_case=True, reduce_len=False, strip_handles=False):
+        self.preserve_case = preserve_case
+        self.reduce_len = reduce_len
+        self.strip_handles = strip_handles
+
+    def tokenize(self, text):
+        """
+        :param text: str
+        :rtype: list(str)
+        :return: a tokenized list of strings; concatenating this list returns\
+        the original string if `preserve_case=False`
+        """
+        # Fix HTML character entities:
+        text = _replace_html_entities(text)
+        # Remove username handles
+        if self.strip_handles:
+            text = remove_handles(text)
+        # Normalize word lengthening
+        if self.reduce_len:
+            text = reduce_lengthening(text)
+        # Shorten problematic sequences of characters
+        safe_text = HANG_RE.sub(r"\1\1\1", text)
+        # Tokenize:
+        r"|<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>"
+        custom_Re = regex.compile(
+            r"""(%s)"""
+            % "|".join(
+                (
+                    r":[^:\s]+:",
+                    r"<:[^:\s]+:[0-9]+>",
+                    r"<a:[^:\s]+:[0-9]+>",
+                    r"<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>",
+                )
+                + REGEXPS
+            ),
+            regex.VERBOSE | regex.I | regex.UNICODE,
+        )
+        words = custom_Re.findall(safe_text)
+        # Possibly alter the case, but avoid changing emoticons like :D into :d:
+        if not self.preserve_case:
+            words = list(
+                map((lambda x: x if EMOTICON_RE.search(x) else x.lower()), words)
+            )
+        return words
+
+
+class TweetWordTokenizer(BaseTokenizer):
+    """NLTK's recommended word tokenizer (currently the TreeBankTokenizer).
+    Uses regular expressions to tokenize text. Assumes text has already been
+    segmented into sentences.
+
+    Performs the following steps:
+
+    * split standard contractions, e.g. don't -> do n't
+    * split commas and single quotes
+    * separate periods that appear at the end of line
+    """
+
+    def tokenize(self, text, include_punc=True):
+        """Return a list of word tokens.
+
+        :param text: string of text.
+        :param include_punc: (optional) whether to include punctuation as separate tokens. Default to True.
+        """
+        tokens = nltk.tokenize.word_tokenize(text)
+        tokens = TweetTokenizer().tokenize(text)
+        if include_punc:
+            return tokens
+        else:
+            # Return each word token
+            # Strips punctuation unless the word comes from a contraction
+            # e.g. "Let's" => ["Let", "'s"]
+            # e.g. "Can't" => ["Ca", "n't"]
+            # e.g. "home." => ['home']
+            return [
+                word if word.startswith("'") else strip_punc(word, all=False)
+                for word in tokens
+                if strip_punc(word, all=False)
+            ]
+
+
+# print(blob.sentences[0].tokenize(TweetWordTokenizer()))
+
+
 @logged_mutator
 def recumpile_sentence(sentence: Sentence) -> List[str]:
     new_tokens = []
@@ -777,7 +892,17 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
     if decision(0.89):
         sentiment_emoji = get_sentiment_emoji(sentence)
 
-    for token in sentence.tokens:
+    for token in sentence.tokenize(TweetWordTokenizer()):
+        # TODO: this is only for discord so we dont break tokenization
+        # if re.match(r"@everyone|@here|:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>|<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>",
+        #             token):
+        if re.match(
+            r"@everyone|@here|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>|<(?:@!?\d+|:[A-Za-z0-9]+:)\w+>",
+            token,
+        ):
+            new_tokens.append(token)
+            continue
+
         emoji = None
         alias_emoji = get_cheap_emoji_alias(token)
 
