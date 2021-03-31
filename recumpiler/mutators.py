@@ -881,9 +881,6 @@ class TweetWordTokenizer(BaseTokenizer):
             ]
 
 
-# print(blob.sentences[0].tokenize(TweetWordTokenizer()))
-
-
 @logged_mutator
 def recumpile_sentence(sentence: Sentence) -> List[str]:
     new_tokens = []
@@ -894,8 +891,6 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
 
     for token in sentence.tokenize(TweetWordTokenizer()):
         # TODO: this is only for discord so we dont break tokenization
-        # if re.match(r"@everyone|@here|:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>|<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>",
-        #             token):
         if re.match(
             r"@everyone|@here|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>|<(?:@!?\d+|:[A-Za-z0-9]+:)\w+>",
             token,
