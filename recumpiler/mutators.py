@@ -1003,6 +1003,12 @@ def add_ending_y(token: str) -> str:
     return re.sub(r"([a-zA-Z]{4,}[^sy])", lambda match: f"{match.group(1)}y", token)
 
 
+def remove_dupe_chars(text: str) -> str:
+    """accept -> acept"""
+    text = re.sub(r"([a-zA-Z])\1+", r"\1", text)
+    return text
+
+
 @logged_mutator
 def recumpile_token(token: str) -> str:
     # TODO: determine mood classifier for token and add respective emoji
@@ -1021,6 +1027,9 @@ def recumpile_token(token: str) -> str:
             )  # TODO: add ability to get multiple?
             if relevant_emoji and decision(wrap_text_relevant_emoji_probability):
                 fucked_tokens.append(relevant_emoji)
+
+        if decision(0.1):
+            token = remove_dupe_chars(token)
 
         if decision(lazy_char_subbing_probability):
             token = lazy_char_subbing(token)
