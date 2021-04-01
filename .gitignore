@@ -130,6 +130,7 @@ dmypy.json
 tokens/
 dev/
 channels.json
+mods.json
 
 # output
 logs/

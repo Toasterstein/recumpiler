@@ -68,6 +68,10 @@ class RecumpilerBot(discord.Client):
         )
         if message.author.id != self.user.id:
             if message.channel.id in channels:
+                if message.author.id in mods:
+                    if message.content.startswith("NO:"):
+                        __log__.info(f"not recumpiling for mod: {message.author.id}")
+                        return
                 await message.delete()
                 # TODO: add some way to recover if `recumpile_text` fails?
                 waiting_message = await message.channel.send(
@@ -81,6 +85,9 @@ client = RecumpilerBot()
 # file containing a simple json list of the channels you want all text to be recumpiled [<channel_id>]
 with open("../channels.json") as f:
     channels = json.load(f)
+
+with open("../mods.json") as f:
+    mods = json.load(f)
 
 # file containing the discord bot token
 with open("../tokens/token.txt") as f:
