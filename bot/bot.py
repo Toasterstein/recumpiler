@@ -63,7 +63,7 @@ class RecumpilerBot(discord.Client):
 
     async def on_message(self, message):
         message: Message = message
-        __log__.info(
+        __log__.debug(
             f"obtained {message.author.id} {message.author.display_name} message: {message.content} message_type:{message.channel.type}"
         )
         if message.author.id != self.user.id:
