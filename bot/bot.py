@@ -46,6 +46,9 @@ class RecumpilerBot(discord.Client):
             #       either dropping the message or embedding it as a file.
             __log__.info(f"fucked message text: {fucked_text}")
             await waiting_message.edit(content=f"<@!{message.author.id}> {fucked_text}")
+            for attachment in message.attachments:
+                # TODO: quick hack to get images reposted
+                await waiting_message.channel.send(content=attachment.url)
             if original_fucked_text != fucked_text:
                 raise ValueError(
                     "post-processed discord-ready fucked text not the same likely output was too long"
