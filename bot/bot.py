@@ -35,7 +35,7 @@ class RecumpilerBot(discord.Client):
     async def my_background_task(self, message, waiting_message: discord.Message):
         await self.wait_until_ready()
         try:
-            original_fucked_text = recumpile_text(message.content)
+            original_fucked_text = await recumpile_text(message.content)
             fucked_text = (
                 original_fucked_text.encode("utf-8")[
                     : 2000 - (3 + len(message.author.display_name))
@@ -51,7 +51,7 @@ class RecumpilerBot(discord.Client):
                     "post-processed discord-ready fucked text not the same likely output was too long"
                 )
         except:
-            fucked_text = recumpile_text(
+            fucked_text = await recumpile_text(
                 "Oops i had a fucky wucky recumpiling your text! Your text could be too big UWU!"
             )
             await waiting_message.channel.send(
@@ -68,7 +68,7 @@ class RecumpilerBot(discord.Client):
                 await message.delete()
                 # TODO: add some way to recover if `recumpile_text` fails?
                 waiting_message = await message.channel.send(
-                    content=f"<@!{message.author.id}> {recumpile_text('recumpiling your text :3')}"
+                    content=f"<@!{message.author.id}> {await recumpile_text('recumpiling your text :3')}"
                 )
                 self.loop.create_task(self.my_background_task(message, waiting_message))
 

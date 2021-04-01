@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """garbage code to make garbage text"""
-
+import asyncio
 import random
 import re
 import string
@@ -882,7 +882,7 @@ class TweetWordTokenizer(BaseTokenizer):
 
 
 @logged_mutator
-def recumpile_sentence(sentence: Sentence) -> List[str]:
+async def recumpile_sentence(sentence: Sentence) -> List[str]:
     new_tokens = []
     # TODO: determine mood classifier for sentence and add respective emoji
     sentiment_emoji = None
@@ -948,7 +948,7 @@ def recumpile_sentence(sentence: Sentence) -> List[str]:
 
         # processing
         recumpiled_token = recumpile_token(token)
-
+        await asyncio.sleep(0)
         # post processing
         new_tokens.append(recumpiled_token)
 
@@ -1353,10 +1353,11 @@ def replace_with_random_synonym(token: str) -> str:
 
 
 @logged_mutator
-def recumpile_line(text: str) -> str:
+async def recumpile_line(text: str) -> str:
     new_tokens = []
     for sentence in TextBlob(text).sentences:
-        new_tokens += recumpile_sentence(sentence)
+        new_tokens += await recumpile_sentence(sentence)
+        await asyncio.sleep(0)
     out_str = TreebankWordDetokenizer().detokenize(new_tokens)
     out_str = fix_punctuation_spacing(out_str)
 
@@ -1364,14 +1365,15 @@ def recumpile_line(text: str) -> str:
 
 
 @logged_mutator
-def recumpile_text(text: str) -> str:
+async def recumpile_text(text: str) -> str:
     # TODO: preserve spacing better / Maybe use nltk tokenizers instead of a
     #  split method
     # TODO: go sentence by sentence token by token all for sentiment analysis
     lines = []
 
     for line in text.split("\n"):
-        lines.append(recumpile_line(line))
+        lines.append(await recumpile_line(line))
+        await asyncio.sleep(0)
     return "\n".join(lines)
 
 
