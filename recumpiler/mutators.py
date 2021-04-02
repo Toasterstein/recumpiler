@@ -19,8 +19,20 @@ import numpy as np
 import pronouncing
 from better_profanity import profanity
 from nltk.corpus import wordnet as wn
+from nltk.tokenize.casual import (
+    HANG_RE,
+    reduce_lengthening,
+    remove_handles,
+    _replace_html_entities,
+    WORD_RE,
+    EMOTICON_RE,
+    REGEXPS,
+)
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+from regex import regex
 from textblob import TextBlob, Word, Sentence
+from textblob.base import BaseTokenizer
+from textblob.utils import strip_punc
 from word2number import w2n
 
 # TODO: issues with pyenchant
@@ -476,7 +488,14 @@ def rawrer(token: str) -> str:
 @logged_mutator
 def lr_to_w_swap(token: str) -> str:
     token = re.sub(
-        r"([lrLR])", lambda match: f"{'w' if match.group(1).islower() else 'W'}", token
+        r"([lL])",
+        lambda match: f"{('w' if decision(0.7) else 'wl') if match.group(1).islower() else ('W' if decision(0.7) else 'WL')}",
+        token,
+    )
+    token = re.sub(
+        r"([rR])",
+        lambda match: f"{('w' if decision(0.7) else 'wr') if match.group(1).islower() else ('W' if decision(0.7) else 'WR')}",
+        token,
     )
     return token
 
@@ -762,22 +781,138 @@ def utf_8_char_swaps(token: str) -> str:
     return token
 
 
+# TODO: this is only for discord so we don't break tokenization
+class TweetTokenizer:
+    r"""
+    Tokenizer for tweets.
+
+        >>> from nltk.tokenize import TweetTokenizer
+        >>> tknzr = TweetTokenizer()
+        >>> s0 = "This is a cooool #dummysmiley: :-) :-P <3 and some arrows < > -> <--"
+        >>> tknzr.tokenize(s0)
+        ['This', 'is', 'a', 'cooool', '#dummysmiley', ':', ':-)', ':-P', '<3', 'and', 'some', 'arrows', '<', '>', '->', '<--']
+
+    Examples using `strip_handles` and `reduce_len parameters`:
+
+        >>> tknzr = TweetTokenizer(strip_handles=True, reduce_len=True)
+        >>> s1 = '@remy: This is waaaaayyyy too much for you!!!!!!'
+        >>> tknzr.tokenize(s1)
+        [':', 'This', 'is', 'waaayyy', 'too', 'much', 'for', 'you', '!', '!', '!']
+    """
+
+    def __init__(self, preserve_case=True, reduce_len=False, strip_handles=False):
+        self.preserve_case = preserve_case
+        self.reduce_len = reduce_len
+        self.strip_handles = strip_handles
+
+    def tokenize(self, text):
+        """
+        :param text: str
+        :rtype: list(str)
+        :return: a tokenized list of strings; concatenating this list returns\
+        the original string if `preserve_case=False`
+        """
+        # Fix HTML character entities:
+        text = _replace_html_entities(text)
+        # Remove username handles
+        if self.strip_handles:
+            text = remove_handles(text)
+        # Normalize word lengthening
+        if self.reduce_len:
+            text = reduce_lengthening(text)
+        # Shorten problematic sequences of characters
+        safe_text = HANG_RE.sub(r"\1\1\1", text)
+        # Tokenize:
+        r"|<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>"
+        custom_Re = regex.compile(
+            r"""(%s)"""
+            % "|".join(
+                (
+                    r":[^:\s]+:",
+                    r"<:[^:\s]+:[0-9]+>",
+                    r"<a:[^:\s]+:[0-9]+>",
+                    r"<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>",
+                )
+                + REGEXPS
+            ),
+            regex.VERBOSE | regex.I | regex.UNICODE,
+        )
+        words = custom_Re.findall(safe_text)
+        # Possibly alter the case, but avoid changing emoticons like :D into :d:
+        if not self.preserve_case:
+            words = list(
+                map((lambda x: x if EMOTICON_RE.search(x) else x.lower()), words)
+            )
+        return words
+
+
+class TweetWordTokenizer(BaseTokenizer):
+    """NLTK's recommended word tokenizer (currently the TreeBankTokenizer).
+    Uses regular expressions to tokenize text. Assumes text has already been
+    segmented into sentences.
+
+    Performs the following steps:
+
+    * split standard contractions, e.g. don't -> do n't
+    * split commas and single quotes
+    * separate periods that appear at the end of line
+    """
+
+    def tokenize(self, text, include_punc=True):
+        """Return a list of word tokens.
+
+        :param text: string of text.
+        :param include_punc: (optional) whether to include punctuation as separate tokens. Default to True.
+        """
+        tokens = nltk.tokenize.word_tokenize(text)
+        tokens = TweetTokenizer().tokenize(text)
+        if include_punc:
+            return tokens
+        else:
+            # Return each word token
+            # Strips punctuation unless the word comes from a contraction
+            # e.g. "Let's" => ["Let", "'s"]
+            # e.g. "Can't" => ["Ca", "n't"]
+            # e.g. "home." => ['home']
+            return [
+                word if word.startswith("'") else strip_punc(word, all=False)
+                for word in tokens
+                if strip_punc(word, all=False)
+            ]
+
+
 @logged_mutator
-def recumpile_sentence(sentance: Sentence) -> List[str]:
+def recumpile_sentence(sentence: Sentence) -> List[str]:
     new_tokens = []
     # TODO: determine mood classifier for sentence and add respective emoji
     sentiment_emoji = None
     if decision(0.89):
-        sentiment_emoji = get_sentiment_emoji(sentance)
+        sentiment_emoji = get_sentiment_emoji(sentence)
 
-    for token in sentance.tokens:
+    for token in sentence.tokenize(TweetWordTokenizer()):
+        # TODO: this is only for discord so we dont break tokenization
+        if re.match(
+            r"@everyone|@here|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>|<(?:@!?\d+|:[A-Za-z0-9]+:)\w+>",
+            token,
+        ):
+            new_tokens.append(token)
+            continue
+
         emoji = None
         alias_emoji = get_cheap_emoji_alias(token)
+
+        # TODO: refactor into its own mutator
+        if decision(0.9) and (
+            re.match("among", token, flags=re.IGNORECASE)
+            or re.match("amogus", token, flags=re.IGNORECASE)
+            or re.match(r"su+s", token, flags=re.IGNORECASE)
+        ):
+            emoji = "ඞ"
 
         emoticon = get_emoticon(token)
 
         if alias_emoji:
-            if decision(0.1):
+            if decision(0.1) or (len(str(token)) == 1 and decision(0.9)):
                 new_tokens.append(alias_emoji)
                 continue
             else:
@@ -794,6 +929,8 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
 
         if decision(random_synonym_probability):
             token = replace_with_random_synonym(token)
+        if decision(0.5) and profanity.contains_profanity(token):
+            token = token.upper()
         if decision(censor_profanity_probability) and profanity.contains_profanity(
             token
         ):
@@ -851,12 +988,25 @@ def recumpile_sentence(sentance: Sentence) -> List[str]:
 
     if sentiment_emoji:
         new_tokens.append(sentiment_emoji)
+        if decision(0.4):
+            for i in range(5):
+                if decision(0.3):
+                    new_tokens.append(sentiment_emoji)
+                else:
+                    break
+
     return new_tokens
 
 
 @logged_mutator
 def add_ending_y(token: str) -> str:
     return re.sub(r"([a-zA-Z]{4,}[^sy])", lambda match: f"{match.group(1)}y", token)
+
+
+def remove_dupe_chars(text: str) -> str:
+    """accept -> acept"""
+    text = re.sub(r"([a-zA-Z])\1+", r"\1", text)
+    return text
 
 
 @logged_mutator
@@ -877,6 +1027,9 @@ def recumpile_token(token: str) -> str:
             )  # TODO: add ability to get multiple?
             if relevant_emoji and decision(wrap_text_relevant_emoji_probability):
                 fucked_tokens.append(relevant_emoji)
+
+        if decision(0.1):
+            token = remove_dupe_chars(token)
 
         if decision(lazy_char_subbing_probability):
             token = lazy_char_subbing(token)
@@ -1066,12 +1219,20 @@ def lazy_char_subbing(token: str) -> str:
 
     # what -> wat OR wut
     if decision(0.5):
-        token = re.sub(
-            "^wha+t$",
-            lambda match: f"w{random.choice(['a', 'u']) * random.randint(1, 4)}t",
-            token,
-            flags=re.IGNORECASE,
-        )
+        if decision(0.5):
+            token = re.sub(
+                "^wha+t$",
+                lambda match: f"w{random.choice(['a', 'u']) * random.randint(1, 4)}t",
+                token,
+                flags=re.IGNORECASE,
+            )
+        else:
+            token = re.sub(
+                "^wha+t$",
+                lambda match: f"wh{'u' * random.randint(1, 4)}t",
+                token,
+                flags=re.IGNORECASE,
+            )
 
     # er -> ur
     token = re.sub(
