@@ -67,13 +67,20 @@ class RecumpilerBot(discord.Client):
             f"obtained {message.author.id} {message.author.display_name} message: {message.content} message_type:{message.channel.type}"
         )
         if message.author.id != self.user.id:
+            if message.author.id != self.user.id:
+                if isinstance(message.channel, discord.DMChannel):
+                    waiting_message = await message.channel.send(
+                        content=f"<@!{message.author.id}> {recumpile_text('recumpiling your text :3')}"
+                    )
+                    self.loop.create_task(
+                        self.my_background_task(message, waiting_message)
+                    )
             if message.channel.id in channels:
                 if message.author.id in mods:
                     if message.content.startswith("NO:"):
                         __log__.info(f"not recumpiling for mod: {message.author.id}")
                         return
                 await message.delete()
-                # TODO: add some way to recover if `recumpile_text` fails?
                 waiting_message = await message.channel.send(
                     content=f"<@!{message.author.id}> {recumpile_text('recumpiling your text :3')}"
                 )
