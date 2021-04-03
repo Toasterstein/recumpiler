@@ -18,28 +18,15 @@ import nltk
 import numpy as np
 import pronouncing
 from better_profanity import profanity
-from nltk.corpus import wordnet as wn
-from nltk.tokenize.casual import (
-    HANG_RE,
-    reduce_lengthening,
-    remove_handles,
-    _replace_html_entities,
-    WORD_RE,
-    EMOTICON_RE,
-    REGEXPS,
-)
 from nltk.tokenize.treebank import TreebankWordDetokenizer
-from regex import regex
 from textblob import TextBlob, Word, Sentence
-from textblob.base import BaseTokenizer
-from textblob.utils import strip_punc
 from word2number import w2n
 
 # TODO: issues with pyenchant
 # import splitter
 from recumpiler.cheap_emoji_alias import get_cheap_emoji_alias
 
-# these are imported like this as the dependencies are complicated to install
+# These are imported like this as the dependencies are complicated to install
 # and require large files. These are annoying to test in a CI for now.
 # TODO: avoid this work around in future make better CI solution
 try:
@@ -63,6 +50,7 @@ from recumpiler.utils import (
     load_text_face_emoji,
     load_garbage_tokens,
     decision,
+    TweetWordTokenizer,
 )
 
 inflect_engine = inflect.engine()
@@ -249,7 +237,8 @@ def homoify(token: str, homo_percent: float = 0.3):
 
 @logged_mutator
 def owoer(token: str) -> str:
-    # TODO: owo usually goes to owoo should supress.
+    # TODO: owo usually goes to owoo should suppress.
+    # TODO: does this still happen?
 
     token = re.sub(
         r"(ou)([^o]|$)",
@@ -286,7 +275,6 @@ def owoer(token: str) -> str:
             count=random.choice(range(0, 2)),
         )
 
-    # TODO: UWU
     # juice -> juwuice
     if decision(juwuice_swap_probability):
         token = re.sub(
@@ -506,7 +494,6 @@ def jizzer(token: str) -> str:
     return token
 
 
-# TODO: reval this some of it is ineffective i think
 @logged_mutator
 def cummer(token: str) -> str:
     token = re.sub(r"(.ome|co+m|co+n{1,3})", "cum", token)
@@ -643,9 +630,9 @@ def get_pronouncing_rhyme(token: str) -> List[str]:
 
 
 @logged_mutator
-def get_nltk_rymes(token: str, level) -> List[str]:
+def get_nltk_rymes(token: str, level: int) -> List[str]:
     # TODO: stub
-    def rhyme(inp, level):
+    def rhyme(inp, level: int):
         """
         1 bad rhymes
         2
@@ -782,103 +769,6 @@ def utf_8_char_swaps(token: str) -> str:
 
 
 # TODO: this is only for discord so we don't break tokenization
-class TweetTokenizer:
-    r"""
-    Tokenizer for tweets.
-
-        >>> from nltk.tokenize import TweetTokenizer
-        >>> tknzr = TweetTokenizer()
-        >>> s0 = "This is a cooool #dummysmiley: :-) :-P <3 and some arrows < > -> <--"
-        >>> tknzr.tokenize(s0)
-        ['This', 'is', 'a', 'cooool', '#dummysmiley', ':', ':-)', ':-P', '<3', 'and', 'some', 'arrows', '<', '>', '->', '<--']
-
-    Examples using `strip_handles` and `reduce_len parameters`:
-
-        >>> tknzr = TweetTokenizer(strip_handles=True, reduce_len=True)
-        >>> s1 = '@remy: This is waaaaayyyy too much for you!!!!!!'
-        >>> tknzr.tokenize(s1)
-        [':', 'This', 'is', 'waaayyy', 'too', 'much', 'for', 'you', '!', '!', '!']
-    """
-
-    def __init__(self, preserve_case=True, reduce_len=False, strip_handles=False):
-        self.preserve_case = preserve_case
-        self.reduce_len = reduce_len
-        self.strip_handles = strip_handles
-
-    def tokenize(self, text):
-        """
-        :param text: str
-        :rtype: list(str)
-        :return: a tokenized list of strings; concatenating this list returns\
-        the original string if `preserve_case=False`
-        """
-        # Fix HTML character entities:
-        text = _replace_html_entities(text)
-        # Remove username handles
-        if self.strip_handles:
-            text = remove_handles(text)
-        # Normalize word lengthening
-        if self.reduce_len:
-            text = reduce_lengthening(text)
-        # Shorten problematic sequences of characters
-        safe_text = HANG_RE.sub(r"\1\1\1", text)
-        # Tokenize:
-        r"|<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>"
-        custom_Re = regex.compile(
-            r"""(%s)"""
-            % "|".join(
-                (
-                    r":[^:\s]+:",
-                    r"<:[^:\s]+:[0-9]+>",
-                    r"<a:[^:\s]+:[0-9]+>",
-                    r"<(?:[^\d>]+|:[A-Za-z0-9]+:)\w+>",
-                )
-                + REGEXPS
-            ),
-            regex.VERBOSE | regex.I | regex.UNICODE,
-        )
-        words = custom_Re.findall(safe_text)
-        # Possibly alter the case, but avoid changing emoticons like :D into :d:
-        if not self.preserve_case:
-            words = list(
-                map((lambda x: x if EMOTICON_RE.search(x) else x.lower()), words)
-            )
-        return words
-
-
-class TweetWordTokenizer(BaseTokenizer):
-    """NLTK's recommended word tokenizer (currently the TreeBankTokenizer).
-    Uses regular expressions to tokenize text. Assumes text has already been
-    segmented into sentences.
-
-    Performs the following steps:
-
-    * split standard contractions, e.g. don't -> do n't
-    * split commas and single quotes
-    * separate periods that appear at the end of line
-    """
-
-    def tokenize(self, text, include_punc=True):
-        """Return a list of word tokens.
-
-        :param text: string of text.
-        :param include_punc: (optional) whether to include punctuation as separate tokens. Default to True.
-        """
-        tokens = nltk.tokenize.word_tokenize(text)
-        tokens = TweetTokenizer().tokenize(text)
-        if include_punc:
-            return tokens
-        else:
-            # Return each word token
-            # Strips punctuation unless the word comes from a contraction
-            # e.g. "Let's" => ["Let", "'s"]
-            # e.g. "Can't" => ["Ca", "n't"]
-            # e.g. "home." => ['home']
-            return [
-                word if word.startswith("'") else strip_punc(word, all=False)
-                for word in tokens
-                if strip_punc(word, all=False)
-            ]
 
 
 @logged_mutator
