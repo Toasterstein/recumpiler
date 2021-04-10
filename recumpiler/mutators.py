@@ -189,6 +189,9 @@ wrap_text_relevant_emoji_probability = 0.02
 
 lr_to_w_swap_probability = 0.4
 
+invert_word = True
+invert_word_probability = 0.02
+
 
 @logged_mutator
 def num_to_word(token: str) -> str:
@@ -933,6 +936,10 @@ def recumpile_token(token: str) -> str:
         if decision(lr_to_w_swap_probability):
             token = lr_to_w_swap(token)
 
+        # TODO: this might be too much idk
+        if decision(invert_word_probability):
+            token = word_inverter(token)
+
         fucked_token = knotter(fuckyer(reeeer(rawrer(garbage(owoer(cummer(token)))))))
 
         if decision(add_extra_ed_probability):
@@ -1024,6 +1031,7 @@ def recumpile_token(token: str) -> str:
 
         if relevant_emoji:
             fucked_tokens.append(relevant_emoji)
+
 
     for i, fucked_token in enumerate(fucked_tokens):
         if decision(space_gap_text_probability):
@@ -1256,6 +1264,20 @@ def space_gap_text(token: str, min_gap_size: int = 1, max_gap_size: int = 4) -> 
 def replace_with_random_synonym(token: str) -> str:
     # TODO: fill in with all synonyms for lulz?
     # TODO: download manual dictionary
+    return token
+
+@logged_mutator
+def word_inverter(token: str) -> str:
+    #Quases shitty word inverter attempt
+    if invert_word and decision(invert_word_probability):
+        word = list(token)
+        word.reverse()
+        reversed_word = ""
+
+        for i in word:
+            reversed_word += i
+        token = reversed_word
+
     return token
 
 

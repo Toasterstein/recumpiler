@@ -91,6 +91,9 @@ def load_text_face_emoji() -> List[str]:
     ) as csvfile:
         return list([item for sublist in csv.reader(csvfile) for item in sublist])
 
+def split_word(word: str) -> str:
+    return [char for char in word]
+
 
 def decision(probability) -> bool:
     return random.random() < probability
