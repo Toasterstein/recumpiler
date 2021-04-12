@@ -1032,7 +1032,6 @@ def recumpile_token(token: str) -> str:
         if relevant_emoji:
             fucked_tokens.append(relevant_emoji)
 
-
     for i, fucked_token in enumerate(fucked_tokens):
         if decision(space_gap_text_probability):
             # TODO: this modification may be better placed elsewhere
@@ -1266,9 +1265,10 @@ def replace_with_random_synonym(token: str) -> str:
     # TODO: download manual dictionary
     return token
 
+
 @logged_mutator
 def word_inverter(token: str) -> str:
-    #Quases shitty word inverter attempt
+    # Quases shitty word inverter attempt
     if invert_word and decision(invert_word_probability):
         word = list(token)
         word.reverse()
