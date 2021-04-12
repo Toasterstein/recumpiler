@@ -189,7 +189,6 @@ wrap_text_relevant_emoji_probability = 0.02
 
 lr_to_w_swap_probability = 0.4
 
-invert_word = True
 invert_word_probability = 0.02
 
 
@@ -1269,14 +1268,14 @@ def replace_with_random_synonym(token: str) -> str:
 @logged_mutator
 def word_inverter(token: str) -> str:
     # Quases shitty word inverter attempt
-    if invert_word and decision(invert_word_probability):
-        word = list(token)
-        word.reverse()
-        reversed_word = ""
 
-        for i in word:
-            reversed_word += i
-        token = reversed_word
+    word = list(token)
+    word.reverse()
+    reversed_word = ""
+
+    for i in word:
+        reversed_word += i
+    token = reversed_word
 
     return token
 
