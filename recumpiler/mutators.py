@@ -945,7 +945,7 @@ def recumpile_token(token: str) -> str:
         if decision(upside_down_word_probability):
             token = word_upside_downer(token)
         elif decision(upside_down_word_probability):
-            token = word_upside_downer_preserve_char_order
+            token = word_upside_downer_preserve_char_order(token)
 
         fucked_token = knotter(fuckyer(reeeer(rawrer(garbage(owoer(cummer(token)))))))
 
@@ -1300,8 +1300,8 @@ def word_upside_downer(token: str) -> str:
 @logged_mutator
 def word_upside_downer_preserve_char_order(token: str) -> str:
     new_token = []
-    for char in token:
-        new_token.append(upsidedown.transform(char))
+    for char_ in token:
+        new_token.append(upsidedown.transform(char_))
     return "".join(new_token)
 
 
