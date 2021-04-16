@@ -6,6 +6,7 @@
 import random
 import re
 import string
+import upsidedown
 from functools import wraps
 from math import ceil
 from typing import List, Optional
@@ -189,7 +190,9 @@ wrap_text_relevant_emoji_probability = 0.02
 
 lr_to_w_swap_probability = 0.4
 
-invert_word_probability = 0.02
+invert_word_probability = 0.04
+
+upside_down_word_probability = 0.05
 
 
 @logged_mutator
@@ -939,6 +942,9 @@ def recumpile_token(token: str) -> str:
         if decision(invert_word_probability):
             token = word_inverter(token)
 
+        if decision(upside_down_word_probability):
+            token = word_upside_downer(token)
+
         fucked_token = knotter(fuckyer(reeeer(rawrer(garbage(owoer(cummer(token)))))))
 
         if decision(add_extra_ed_probability):
@@ -1276,6 +1282,15 @@ def word_inverter(token: str) -> str:
     for i in word:
         reversed_word += i
     token = reversed_word
+
+    return token
+
+
+@logged_mutator
+def word_upside_downer(token: str) -> str:
+    # Quases upside down word transformer
+
+    token = upsidedown.transform(token)
 
     return token
 
